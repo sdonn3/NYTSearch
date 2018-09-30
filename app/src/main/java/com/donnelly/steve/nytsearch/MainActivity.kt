@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.donnelly.steve.nytsearch.adapters.ArticleAdapter
 import com.donnelly.steve.nytsearch.services.RestClient
 import com.donnelly.steve.nytsearch.services.models.SearchParameters
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -18,18 +20,22 @@ class MainActivity : AppCompatActivity() {
 
     private val newsService by lazy { RestClient().newsService }
     private val disposables by lazy { CompositeDisposable() }
+    private val adapter by lazy { ArticleAdapter() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
+        rvArticles.setHasFixedSize(true)
+        rvArticles.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        rvArticles.adapter = adapter
         searchArticles()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_search, menu)
-        val searchItem =  menu?.findItem(R.id.action_search)
+        val searchItem = menu?.findItem(R.id.action_search)
         val searchView: SearchView = (searchItem?.actionView) as SearchView
         searchView.setOnQueryTextListener(
                 object : SearchView.OnQueryTextListener {
@@ -60,10 +66,17 @@ class MainActivity : AppCompatActivity() {
                 )
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({search ->
-                    search.response?.docs
-                },{ e->
+                .subscribe({ search ->
+                    search.response?.docs?.let {
+                        adapter.articles = search.response.docs
+                    }
+                }, { e ->
                     e.printStackTrace()
                 })
+    }
+
+    override fun onDestroy() {
+        disposables.dispose()
+        super.onDestroy()
     }
 }
