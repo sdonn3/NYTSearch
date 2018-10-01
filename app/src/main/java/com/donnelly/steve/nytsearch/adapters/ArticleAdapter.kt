@@ -45,6 +45,7 @@ class ArticleAdapter : RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() 
                             .with(context)
                             .load(IMAGE_PREFIX + pictureUrl)
                             .into(ivArticle)
+                    ivArticle.visibility = View.VISIBLE
                 } ?: run {
                     ivArticle.visibility = View.GONE
                 }
@@ -76,7 +77,7 @@ class ArticleAdapter : RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() 
 
     private fun getThumbNail(list: List<SearchMultimedia>): String? {
         list.forEach { multimedia ->
-            if (THUMBNAIL_TYPE == multimedia.subType)
+            if (multimedia.url.isNullOrEmpty().not())
                 return multimedia.url
         }
         return null
