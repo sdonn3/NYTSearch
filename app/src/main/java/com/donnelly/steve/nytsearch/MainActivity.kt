@@ -2,6 +2,7 @@ package com.donnelly.steve.nytsearch
 
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -14,7 +15,7 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListener {
 
     var searchParameters = SearchParameters()
 
@@ -56,6 +57,12 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    private fun launchFilterDialog() {
+        val filterDialog = FilterDialogFragment.newInstance(searchParameters)
+        filterDialog.listener = this
+        filterDialog.show(supportFragmentManager, FILTER_DIALOG)
+    }
+
     private fun searchArticles() {
         disposables += newsService
                 .searchArticles(
@@ -69,14 +76,31 @@ class MainActivity : AppCompatActivity() {
                 .subscribe({ search ->
                     search.response?.docs?.let {
                         adapter.articles = search.response.docs
+                        adapter.notifyDataSetChanged()
                     }
                 }, { e ->
                     e.printStackTrace()
                 })
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_filter) {
+            launchFilterDialog()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onComplete(searchParameters: SearchParameters) {
+        this.searchParameters = searchParameters
+        searchArticles()
+    }
+
     override fun onDestroy() {
         disposables.dispose()
         super.onDestroy()
+    }
+
+    companion object {
+        private const val FILTER_DIALOG = "filterDialogFragment"
     }
 }

@@ -50,7 +50,16 @@ class ArticleAdapter : RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() 
                 }
 
                 tvTitle.text = article.headline?.main
+
+                if (article.headline?.main.isNullOrEmpty()) {
+                    tvTitle.visibility = View.GONE
+                }
+
                 tvSummary.text = article.snippet
+
+                if (article.snippet.isNullOrEmpty()) {
+                   tvSummary.visibility = View.GONE
+                }
 
                 clicks()
                         .throttleFirst(500L, TimeUnit.MILLISECONDS)

@@ -19,5 +19,8 @@ interface NewsService {
         private const val API_VERSION = "v2"
         const val SORT_TYPE_OLDEST = "oldest"
         const val SORT_TYPE_NEWEST = "newest"
+        const val NEWS_DESK_ARTS = "arts"
+        const val NEWS_DESK_EDUCATION = "education"
+        const val NEWS_DESK_SPORTS = "sports"
     }
 }
