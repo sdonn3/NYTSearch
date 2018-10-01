@@ -9,6 +9,7 @@ interface NewsService {
 
     @GET("/svc/search/$API_VERSION/articlesearch.json")
     fun searchArticles(
+            @Query(value = "page") page: Int,
             @Query(value = "q", encoded = true) query: String?,
             @Query("begin_date") beginDate: String?,
             @Query("sort") sort: String?,

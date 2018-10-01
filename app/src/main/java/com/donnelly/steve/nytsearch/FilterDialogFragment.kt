@@ -104,6 +104,7 @@ class FilterDialogFragment : DialogFragment(), DatePickerDialog.OnDateSetListene
             newsDeskValues.add(NewsService.NEWS_DESK_SPORTS)
 
         val outParams = SearchParameters(
+                0,
                 initialParams?.query,
                 calendarString,
                 sortString,

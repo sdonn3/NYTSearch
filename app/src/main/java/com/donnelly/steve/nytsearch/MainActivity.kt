@@ -5,8 +5,10 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.donnelly.steve.nytsearch.adapters.ArticleAdapter
+import com.donnelly.steve.nytsearch.listeners.EndlessScrollListener
 import com.donnelly.steve.nytsearch.services.RestClient
 import com.donnelly.steve.nytsearch.services.models.SearchParameters
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -18,6 +20,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListener {
 
     var searchParameters = SearchParameters()
+    lateinit var scrollListener : EndlessScrollListener
 
     private val newsService by lazy { RestClient().newsService }
     private val disposables by lazy { CompositeDisposable() }
@@ -29,7 +32,14 @@ class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListene
         setSupportActionBar(toolbar)
 
         rvArticles.setHasFixedSize(true)
-        rvArticles.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        val layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        rvArticles.layoutManager = layoutManager
+        scrollListener = object : EndlessScrollListener(layoutManager) {
+            override fun onLoadMore(page: Int, totalItemsCount: Int, view: RecyclerView) {
+                searchArticles()
+            }
+        }
+        rvArticles.addOnScrollListener(scrollListener)
         rvArticles.adapter = adapter
         searchArticles()
     }
@@ -43,6 +53,8 @@ class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListene
                     override fun onQueryTextSubmit(queryString: String?): Boolean {
                         searchView.clearFocus()
                         searchParameters.query = queryString
+                        scrollListener.resetState()
+                        searchParameters.page = 0
                         searchArticles()
                         return true
                     }
@@ -66,6 +78,7 @@ class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListene
     private fun searchArticles() {
         disposables += newsService
                 .searchArticles(
+                        page = searchParameters.page,
                         query = searchParameters.query,
                         beginDate = searchParameters.beginDate,
                         sort = searchParameters.sort,
@@ -75,8 +88,15 @@ class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListene
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ search ->
                     search.response?.docs?.let {
-                        adapter.articles = search.response.docs
-                        adapter.notifyDataSetChanged()
+                        if (searchParameters.page == 0) {
+                            adapter.articles = search.response.docs
+                            adapter.notifyDataSetChanged()
+                        } else {
+                            val previousPosition = adapter.articles.size
+                            adapter.articles.addAll(search.response.docs)
+                            adapter.notifyItemRangeInserted(previousPosition, search.response.docs.size)
+                        }
+                        searchParameters.page++
                     }
                 }, { e ->
                     e.printStackTrace()
@@ -92,6 +112,8 @@ class MainActivity : AppCompatActivity(), FilterDialogFragment.OnCompleteListene
 
     override fun onComplete(searchParameters: SearchParameters) {
         this.searchParameters = searchParameters
+        searchParameters.page = 0
+        scrollListener.resetState()
         searchArticles()
     }
 

@@ -5,6 +5,7 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 class SearchParameters(
+        var page: Int = 0,
         var query: String? = null,
         var beginDate: String? = null,
         var sort: String? = null,
